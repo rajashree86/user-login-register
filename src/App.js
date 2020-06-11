@@ -1,32 +1,54 @@
 import React, { Component } from 'react';
-import { BrowserRouter as Router, Route } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import store from './store';
+import { Router, Route } from 'react-router-dom';
 
-import Navbar from './components/Navbar';
-import Register from './components/Register';
-import Login from './components/Login';
-import Home from './components/Home';
+import {Login} from './components/auth/Login';
+import { Register } from './components/auth/Register';
+import {Home} from './components/Home/Home';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { history } from './helpers';
+import { PrivateRoute } from './components/PrivateRoute'
+import { connect } from 'react-redux';
+import { alertActions } from './actions';
+import './App.css';
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+
+    history.listen((location, action) => {
+        // clear alert on location change
+        this.props.clearAlerts();
+    });
+  }
+
   render() {
+    const { alert } = this.props;
     return (
-      <Provider store = { store }>
-        <Router>
+      <div>
+         {alert.message &&
+            <div className={`alert ${alert.type}`}>{alert.message}</div>
+          }
+        <Router history={history}>
             <div>
-              <Navbar />
-                <Route exact path="/" component={ Home } />
-                <div className="container">
-                  <Route exact path="/register" component={ Register } />
-                  <Route exact path="/login" component={ Login } />
-                </div>
+            <PrivateRoute exact path="/" component={Home} />
+            <Route path="/login" component={Login} />
+            <Route path="/register" component={Register} />
             </div>
-          </Router>
-        </Provider>
+        </Router>
+      </div>
     );
   }
 }
 
-export default App;
+function mapState(state) {
+  const { alert } = state;
+  return { alert };
+}
+
+const actionCreators = {
+  clearAlerts: alertActions.clear
+};
+
+const connectedApp = connect(mapState, actionCreators)(App);
+export { connectedApp as App };
+// export default App;
